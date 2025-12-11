@@ -1,7 +1,11 @@
-/* Importer Roboto Variable depuis Google Fonts */
+/* =========================================
+   IMPORTS & RESET
+   ========================================= */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100..900&display=swap');
 
-/* Layout principal */
+/* =========================================
+   LAYOUT PRINCIPAL
+   ========================================= */
 .app {
   min-height: 100vh;
   display: flex;
@@ -11,9 +15,13 @@
   gap: 24px;
   background-color: #181818;
   font-family: 'Roboto', sans-serif;
+  box-sizing: border-box;
+  /* Important pour le padding */
 }
 
-/* Titre */
+/* =========================================
+   TITRE
+   ========================================= */
 .title {
   font-family: 'Roboto', sans-serif;
   font-size: 2.5rem;
@@ -31,16 +39,21 @@
   font-weight: 700;
 }
 
-/* Zone de contrôles */
+/* =========================================
+   ZONE DE CONTRÔLES (Container)
+   ========================================= */
 .controls {
   width: 100%;
   max-width: 650px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 30px;
+  /* Un peu plus d'espace entre l'input et les sliders */
 }
 
-/* Input texte */
+/* =========================================
+   INPUT TEXTE
+   ========================================= */
 .input-wrapper {
   position: relative;
   width: 100%;
@@ -69,7 +82,7 @@
   color: #888;
 }
 
-/* Bouton clear */
+/* Bouton clear (la croix dans l'input) */
 .clear-btn {
   position: absolute;
   right: 10px;
@@ -93,7 +106,94 @@
   background-color: #777;
 }
 
-/* Zone d'aperçu */
+/* =========================================
+   GRILLE D'ALIGNEMENT (Le correctif)
+   ========================================= */
+.grid-layout {
+  display: grid;
+  /* 4 colonnes : Label | Slider | Valeur | Reset */
+  grid-template-columns: 130px 1fr 50px 30px;
+  align-items: center;
+  column-gap: 15px;
+  row-gap: 25px;
+  /* Espace entre les lignes */
+  width: 100%;
+}
+
+/* Labels (LEFT WEIGHT, etc.) */
+.grid-layout label {
+  color: #888;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* Wrapper du slider pour qu'il prenne la largeur */
+.slider-track {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* Style de base des sliders pour être visibles sur fond noir */
+.slider-track input[type="range"] {
+  width: 100%;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #3b82f6;
+  /* Bleu style iOS/macOS */
+}
+
+/* Valeurs numériques */
+.value {
+  color: #fff;
+  font-family: monospace;
+  /* Alignement des chiffres plus propre */
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+/* Bouton Reset (la petite flèche) */
+.reset-btn {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.reset-btn:hover {
+  color: #fff;
+}
+
+.reset-btn.disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Wrapper pour le composant FontPicker */
+.font-picker-wrapper {
+  width: 100%;
+  /* S'assure que le picker prend toute la largeur de sa colonne */
+}
+
+/* Style basique pour FontPicker s'il n'en a pas */
+.font-picker-wrapper select {
+  width: 100%;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+/* =========================================
+   APERÇU & EXPORT
+   ========================================= */
 .preview-zone {
   width: 100%;
   max-width: 900px;
@@ -103,11 +203,19 @@
   align-items: center;
   justify-content: center;
   background-color: rgba(255, 255, 255, 0.03);
+  /* Fond très léger */
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   margin-top: 10px;
 }
 
-/* Container bouton export */
+/* Le SVG doit être responsive */
+.preview-svg {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+}
+
 .export-container {
   width: 100%;
   max-width: 900px;
@@ -115,7 +223,6 @@
   justify-content: flex-end;
 }
 
-/* Bouton export */
 .export-btn {
   padding: 14px 36px;
   font-size: 0.9rem;
@@ -131,4 +238,9 @@
 
 .export-btn:hover {
   background-color: #45a049;
+}
+
+.export-btn:disabled {
+  background-color: #2d5a30;
+  cursor: wait;
 }
