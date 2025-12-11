@@ -16,9 +16,7 @@
       </div>
 
       <!-- GRILLE D'ALIGNEMENT -->
-      <!-- [Label: 140px] [Slider: 1fr] [Valeur: 50px] [Reset: 30px] -->
       <div class="grid-layout">
-        
         <!-- Ligne 1 : Min Weight -->
         <label>LEFT WEIGHT</label>
         <div class="slider-track">
@@ -76,17 +74,14 @@
         <div class="font-picker-wrapper">
           <FontPicker v-model="chosenFont" />
         </div>
-        <!-- Cellules vides -->
         <span></span>
         <span></span>
-
       </div>
     </div>
 
-    <!-- Zone d'aperçu SVG -->
-    <div class="preview-zone">
+    <!-- Zone d'aperçu -->
+    <div ref="previewRef" class="preview-zone">
       <svg 
-        ref="svgRef"
         class="preview-svg"
         xmlns="http://www.w3.org/2000/svg"
         :viewBox="svgViewBox"
@@ -108,8 +103,8 @@
     </div>
 
     <div class="export-container">
-      <button @click="exportSvgVector" class="export-btn" :disabled="isExporting">
-        {{ isExporting ? 'VECTORISATION...' : 'DOWNLOAD SVG FILE' }}
+      <button @click="exportPng" class="export-btn" :disabled="isExporting">
+        {{ isExporting ? 'EXPORTATION...' : 'DOWNLOAD PNG' }}
       </button>
     </div>
   </div>
@@ -118,6 +113,7 @@
 <script lang="ts">
 import { defineComponent, ref, computed, watch, nextTick } from 'vue';
 import FontPicker from './components/FontPicker.vue';
+import html2canvas from 'html2canvas';
 
 interface FontItem {
   family: string;
@@ -135,11 +131,10 @@ export default defineComponent({
     const wghtMax = ref(800);
     const wordSpacing = ref(20);    
     const letterSpacing = ref(0);   
-    
     const chosenFont = ref<FontItem | null>(null);
     const sliderKey = ref(0);
-    const svgRef = ref<SVGElement | null>(null);
     const isExporting = ref(false);
+    const previewRef = ref<HTMLDivElement | null>(null);
 
     const globalMinAllowed = ref(100);
     const globalMaxAllowed = ref(1000);
@@ -183,104 +178,27 @@ export default defineComponent({
       };
     };
 
-    const loadScript = (src: string, globalName: string) => {
-      return new Promise((resolve, reject) => {
-        if ((window as any)[globalName]) return resolve(true);
-        const s = document.createElement('script');
-        s.src = src;
-        s.onload = () => resolve(true);
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    };
-
-    const exportSvgVector = async () => {
-      if (!svgRef.value) return;
+    const exportPng = async () => {
+      if (!previewRef.value) return;
       isExporting.value = true;
-      let canvas: HTMLCanvasElement | null = null;
-      let img: HTMLImageElement | null = null;
-
       try {
-        await loadScript('https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.min.js', 'ImageTracer');
-        const ImageTracer = (window as any).ImageTracer;
-
-        // 1. CLONAGE et PRÉPARATION HD
-        const clone = svgRef.value.cloneNode(true) as SVGElement;
-        
-        // Scale x10 pour une précision vectorielle parfaite
-        const scale = 10; 
-        const w = 1000 * scale; 
-        const h = 250 * scale;
-        
-        clone.setAttribute('width', `${w}px`);
-        clone.setAttribute('height', `${h}px`);
-        // On conserve le viewBox pour que le contenu s'adapte
-        clone.setAttribute('viewBox', `0 0 1000 250`); 
-        
-        // Force le noir pour la vectorisation
-        clone.querySelectorAll('tspan, text').forEach((el: any) => el.style.fill = '#000000');
-        
-        // INJECTION CSS CRITIQUE : Permet au Canvas de connaître la police
-        const family = chosenFont.value?.family || 'Inter';
-        const style = document.createElement('style');
-        style.textContent = `
-          text, tspan { 
-            font-family: "${family}", sans-serif !important; 
-          }
-        `;
-        clone.prepend(style);
-
-        // 2. RENDU CANVAS (PIXELS)
-        const svgStr = new XMLSerializer().serializeToString(clone);
-        const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-
-        canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('Context null');
-        
-        ctx.clearRect(0, 0, w, h); // Fond transparent
-
-        img = new Image();
-        img.src = url;
-        await new Promise((resolve, reject) => {
-            img!.onload = resolve;
-            img!.onerror = reject;
+        const canvas = await html2canvas(previewRef.value);
+        canvas.toBlob((blob: Blob | null) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `sticky-preview-${Date.now()}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
         });
-        
-        ctx.drawImage(img, 0, 0);
-        URL.revokeObjectURL(url);
-
-        // 3. VECTORISATION (CHEMINS)
-        const imageData = ctx.getImageData(0, 0, w, h);
-        
-        const svgVector = ImageTracer.imagedataToSVG(imageData, {
-            ltres: 0.1, qtres: 0.1, pathomit: 20, // Ignorer le bruit
-            colorsampling: 2, numberofcolors: 2, mincolorratio: 0, 
-            strokewidth: 0, viewbox: true, linefilter: true,
-            scale: 1/scale, // Redimensionner à la taille originale (1000px)
-            rightangleenhance: false // Respecter les courbes naturelles
-        });
-
-        // 4. TÉLÉCHARGEMENT
-        const finalBlob = new Blob([svgVector], { type: 'image/svg+xml;charset=utf-8' });
-        const finalUrl = URL.createObjectURL(finalBlob);
-        const a = document.createElement('a');
-        a.href = finalUrl;
-        a.download = `sticky-cut-${Date.now()}.svg`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(finalUrl);
-
       } catch (e) {
         console.error(e);
-        alert('Erreur export: ' + (e instanceof Error ? e.message : String(e)));
+        alert('Erreur export PNG');
       } finally {
         isExporting.value = false;
-        if (canvas) canvas.remove();
       }
     };
 
@@ -289,104 +207,9 @@ export default defineComponent({
       wordSpacing, letterSpacing,
       globalMinAllowed, globalMaxAllowed,
       chosenFont, processedWords, sliderKey,
-      svgRef, svgViewBox, isExporting,
-      clearText, getWordStyle, exportSvgVector
+      previewRef, svgViewBox, isExporting,
+      clearText, getWordStyle, exportPng
     };
   },
 });
 </script>
-
-<style scoped>
-/* GRILLE D'ALIGNEMENT */
-.grid-layout {
-  display: grid;
-  grid-template-columns: 140px 1fr 50px 30px;
-  row-gap: 20px;
-  column-gap: 15px;
-  align-items: center;
-  margin-top: 20px;
-}
-
-/* Col 1: Labels */
-.grid-layout label {
-  text-align: left;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #888;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-}
-
-/* Col 2: Sliders */
-.slider-track {
-  width: 100%;
-  display: flex;
-  align-items: center;
-}
-.slider-track input[type="range"] {
-  width: 100%;
-  cursor: pointer;
-}
-
-/* Col 3: Valeurs */
-.value {
-  text-align: right;
-  font-family: monospace;
-  font-size: 0.9rem;
-  color: #fff;
-}
-
-/* Col 4: Reset Buttons */
-.reset-btn {
-  background: none;
-  border: 1px solid #444;
-  border-radius: 50%;
-  color: #aaa;
-  cursor: pointer;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  padding: 0;
-  transition: all 0.2s;
-  justify-self: end;
-}
-
-.reset-btn:hover:not(.disabled) {
-  background-color: #555;
-  color: #fff;
-  border-color: #666;
-}
-
-.reset-btn.disabled {
-  opacity: 0.2;
-  cursor: default;
-  border-color: transparent;
-}
-
-/* Col 2 (Font): FontPicker */
-.font-picker-wrapper {
-  width: 100%;
-}
-
-/* Preview Zone */
-.preview-zone {
-  width: 100%;
-  min-height: 200px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #1a1a1a;
-  overflow: hidden;
-  border-radius: 12px;
-  margin-top: 30px;
-  border: 1px solid #333;
-}
-.preview-svg {
-  width: 100%;
-  height: auto;
-  max-height: 400px;
-}
-</style>
