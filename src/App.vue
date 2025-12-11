@@ -1,7 +1,7 @@
 <template>
   <div class="app">
     <h1 class="title">
-      <span class="light">Sticky</span><span class="bold">Phrases</span>
+      <span class="light">sticky</span><span class="bold">Phrases</span>
     </h1>
 
     <div class="controls">
@@ -9,7 +9,7 @@
       <div class="input-wrapper">
         <input 
           v-model="text" 
-          placeholder="tu es magnifique" 
+          placeholder="tu es exceptionnelle" 
           class="text-input"
         />
         <button v-if="text" @click="clearText" class="clear-btn">×</button>
@@ -20,7 +20,7 @@
       <div class="grid-layout">
         
         <!-- Ligne 1 : Min Weight -->
-        <label>MIN WEIGHT</label>
+        <label>LEFT WEIGHT</label>
         <div class="slider-track">
           <input type="range" :min="globalMinAllowed" :max="globalMaxAllowed" v-model.number="wghtMin" />
         </div>
@@ -33,7 +33,7 @@
         >↺</button>
 
         <!-- Ligne 2 : Max Weight -->
-        <label>MAX WEIGHT</label>
+        <label>RIGHT WEIGHT</label>
         <div class="slider-track">
           <input type="range" :min="globalMinAllowed" :max="globalMaxAllowed" v-model.number="wghtMax" />
         </div>
@@ -46,7 +46,7 @@
         >↺</button>
 
         <!-- Ligne 3 : Espace Mots -->
-        <label>ESPACE MOTS</label>
+        <label>WORDS SPACES</label>
         <div class="slider-track">
           <input type="range" min="0" max="100" v-model.number="wordSpacing" />
         </div>
@@ -59,7 +59,7 @@
         >↺</button>
 
         <!-- Ligne 4 : Espace Lettres -->
-        <label>ESPACE LETTRES</label>
+        <label>LETTERS SPACES</label>
         <div class="slider-track">
           <input type="range" min="-10" max="50" step="0.5" v-model.number="letterSpacing" />
         </div>
@@ -72,7 +72,7 @@
         >↺</button>
 
         <!-- Ligne 5 : Police -->
-        <label class="font-label">POLICE</label>
+        <label class="font-label">FONT</label>
         <div class="font-picker-wrapper">
           <FontPicker v-model="chosenFont" />
         </div>
@@ -109,7 +109,7 @@
 
     <div class="export-container">
       <button @click="exportSvgVector" class="export-btn" :disabled="isExporting">
-        {{ isExporting ? 'VECTORISATION...' : 'TÉLÉCHARGER LE SVG (COURBES)' }}
+        {{ isExporting ? 'VECTORISATION...' : 'DOWNLOAD SVG FILE' }}
       </button>
     </div>
   </div>
@@ -130,7 +130,7 @@ export default defineComponent({
   name: 'App',
   components: { FontPicker },
   setup() {
-    const text = ref('tu es magnifique');
+    const text = ref('tu es exceptionnelle');
     const wghtMin = ref(200);
     const wghtMax = ref(800);
     const wordSpacing = ref(20);    
