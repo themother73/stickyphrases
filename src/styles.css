@@ -188,24 +188,32 @@ body {
 /* =========================================
    APERÇU & EXPORT
    ========================================= */
+/* Remplacer l'ancienne règle .preview-zone par celle-ci */
 .preview-zone {
   width: 100%;
-  max-width: 900px;
-  min-height: 150px;
-  padding: 20px;
+  /* max-width: 900px;  <-- ON ENLÈVE ÇA */
+  min-height: 100px;
+  padding: 10px 0;
+  /* Padding horizontal à 0 pour coller aux bords */
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  margin-top: 10px;
+
+  /* On enlève le style "cadre" visuel */
+  background-color: transparent;
+  /* ou remove line */
+  border: none;
+  /* ou remove line */
+  border-radius: 0;
+  margin-top: 0px;
+  overflow: hidden;
+  /* Sécurité pour éviter les scrollbars parasites */
 }
 
 .preview-svg {
   width: 100%;
-  height: auto;
-  max-height: 300px;
+  /* height: auto; */
+  max-height: 200px;
 }
 
 .export-container {

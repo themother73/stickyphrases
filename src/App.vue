@@ -104,7 +104,7 @@
 
     <div class="export-container">
       <button @click="exportPng" class="export-btn" :disabled="isExporting">
-        {{ isExporting ? 'EXPORTATION...' : 'DOWNLOAD PNG' }}
+        {{ isExporting ? 'EXPORTATION...' : 'DOWNLOAD PNG 300DPI' }}
       </button>
     </div>
   </div>
@@ -174,54 +174,88 @@ export default defineComponent({
         fontVariationSettings: `'wght' ${weight}`,
         fontSize: `${fontSize}px`,
         letterSpacing: `${letterSpacing.value}px`,
-        // Couleur affichée à l'écran : BLANC
+        // Affichage écran : BLANC
         fill: '#ffffff'
       };
     };
 
     const exportPng = async () => {
-      if (!previewRef.value) return;
+      const element = previewRef.value;
+      if (!element) return;
+      
       isExporting.value = true;
-      try {
-        const canvas = await html2canvas(previewRef.value, {
-          backgroundColor: null, // Fond transparent
-          scale: 2, // Haute résolution
-          useCORS: true, // Chargement des fonts externes
-          
-          // --- CORRECTION TYPESCRIPT & STYLE ---
-          onclone: (clonedDoc: Document) => {
-            const clonedPreview = clonedDoc.querySelector('.preview-zone') as HTMLElement;
-            
-            // On supprime la bordure et le fond gris du conteneur cloné
-            if (clonedPreview) {
-              clonedPreview.style.border = 'none';
-              clonedPreview.style.background = 'none';
-              clonedPreview.style.boxShadow = 'none';
-            }
+      
+      // 1. Sauvegarde des styles originaux
+      const originalBg = element.style.background;
+      const originalBorder = element.style.border;
+      const originalShadow = element.style.boxShadow;
 
-            // On force le texte en NOIR sur le clone
-            const textElements = clonedDoc.querySelectorAll('tspan');
-            textElements.forEach((el: any) => {
-              el.style.fill = '#000000';
-              el.style.color = '#000000';
-            });
-          }
+      try {
+        // 2. MODIFICATION TEMPORAIRE DU VRAI ÉLÉMENT ("Flash")
+        // On enlève le cadre et le fond gris pour l'export
+        element.style.background = 'transparent';
+        element.style.border = 'none';
+        element.style.boxShadow = 'none';
+        
+        // On force le texte en NOIR sur le vrai élément
+        const textElements = element.querySelectorAll('tspan');
+        const originalColors: string[] = []; // Pour restaurer
+        
+        textElements.forEach((el: any) => {
+          originalColors.push(el.style.fill); // Sauvegarde couleur
+          el.style.fill = '#000000'; // Noir
+          el.style.color = '#000000';
         });
 
+        // Pause pour laisser le temps au navigateur de faire le rendu (Repaint)
+        await new Promise(r => setTimeout(r, 50));
+
+        // 3. CAPTURE
+        const canvas = await html2canvas(element, {
+          backgroundColor: null,
+          scale: 6, // 300 DPI
+          useCORS: true,
+          logging: false,
+          width: element.offsetWidth, 
+          height: element.offsetHeight
+        });
+
+        // 4. RESTAURATION IMMÉDIATE DU STYLE
+        element.style.background = originalBg;
+        element.style.border = originalBorder;
+        element.style.boxShadow = originalShadow;
+        
+        // Restauration couleur texte
+        textElements.forEach((el: any, i: number) => {
+          el.style.fill = originalColors[i] || '#ffffff';
+          el.style.color = '';
+        });
+
+        // 5. TÉLÉCHARGEMENT
         canvas.toBlob((blob: Blob | null) => {
           if (!blob) return;
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `sticky-export-${Date.now()}.png`;
+          a.download = `sticky-print-300dpi-${Date.now()}.png`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         });
+
       } catch (e) {
-        console.error(e);
-        alert('Erreur export PNG');
+        console.error("Erreur Export:", e);
+        alert('Erreur lors de l\'export PNG');
+        
+        // Sécurité : Restauration forcée si plantage
+        element.style.background = '';
+        element.style.border = '';
+        const textElements = element.querySelectorAll('tspan');
+        textElements.forEach((el: any) => {
+           el.style.fill = '#ffffff'; 
+        });
+        
       } finally {
         isExporting.value = false;
       }
@@ -238,6 +272,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style>
-</style>
